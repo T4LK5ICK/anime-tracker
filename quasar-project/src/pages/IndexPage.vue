@@ -1,23 +1,15 @@
 <template>
   <div class="q-pa-md ">
-    <div class="row justify-center">
-      <div>
-        <q-card flat>
-          <div class="row">
-            <q-card-section class="row">
-              <q-input class="col" v-model="search_query" outlined style="width:450px"
-                label="search any anime..."></q-input> <q-btn icon="send" color="black"
-                @click="submitInput(search_query)"></q-btn>
-            </q-card-section>
-          </div>
-
-
-
-        </q-card>
+    <div class="row justify-center items-center">
+          <div class="col-10  col-sm-8 col-md-6">
+              <q-input  v-model="search_query" outlined @keydown.enter.prevent="submitInput(search_query)"
+                label="search any anime..."><template v-slot:append>
+                  <q-icon name="search" />
+                </template></q-input> 
       </div>
     </div>
-    <div class="row justify-center q-ma-xl" v-if="data">
-      <q-card style="width:500px">
+    <div class="row justify-center q-mt-md" v-if="data">
+      <q-card class="col-10 col-sm-8 col-md-6">
         
         <q-card-section>
           <q-card-title class="text-bold" style="font-size: x-large;">
