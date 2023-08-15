@@ -1,52 +1,42 @@
 <template>
-  <div class="q-pa-md ">
+  <div class="q-pa-md bg-black">
     <div class="row justify-center items-center">
-          <div class="col-10  col-sm-8 col-md-6">
-              <q-input  v-model="search_query" outlined @keydown.enter.prevent="submitInput(search_query)"
-                label="search any anime..."><template v-slot:append>
-                  <q-icon name="search" />
-                </template></q-input> 
+      <div class="col-10 col-sm-8 col-md-6">
+        <q-input  dark color="white" v-model="search_query"  rounded outlined  @keydown.enter.prevent="submitInput(search_query)" label="Search any Anime..." >
+          <template v-slot:append>  
+            <q-icon name="search" color="white"/>
+          </template>
+        </q-input>
       </div>
     </div>
-    <div class="row justify-center q-mt-md" v-if="data">
-      <q-card class="col-10 col-sm-8 col-md-6">
-        
+    <div class="row justify-center q-mt-md text-white" v-if="data">
+      <div v-for="(result, index) in resultArray" :key="index" class="col-10 col-sm-8 col-md-4 q-ma-md">
+      <q-card class=" full-height bg-grey-10" >
         <q-card-section>
-          <q-card-title class="text-bold" style="font-size: x-large;">
-            {{ result['title'] }}
-            <hr><br>
-          </q-card-title>
-          <q-img :src="result['img-url']" :ratio="16 / 9" />
-          <p class="q-pt-md"><b>Storyline:</b><br>{{ result['description'] }}</p>
-
+          <div class="row"><div class="col-12 ellipsis"><strong>{{ result['title'] }}</strong></div></div>
+            
+            <hr /><br />
+          
+          <q-img :src="result['img-url']" :ratio="16/9"/>
+          <p class="q-pt-md"><b>Storyline:</b><br>{{ result['description'].slice(0,100)}}{{  result['description'].length >100 ? "..." : "" }}</p>
         </q-card-section>
-        <q-table class="q-pa-md" :hide-pagination="true" title="More Info" :columns="columns" :rows="rows" flat></q-table>
+        <q-table class="q-pa-md bg-grey-10 text-white" :hide-pagination="true" title="More Info" :columns="columns" :rows="result['rows']" flat></q-table>
       </q-card>
+    </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue';
-import { api } from 'src/boot/axios'
-
-
-
+import { api } from 'src/boot/axios';
 
 export default {
   name: 'IndexPage',
   setup() {
-
-    const search_query = ref(null)
-    const data = ref(null)
-    const result = ref({})
-    // const columns = [
-    //   { label: 'Release Date', name: 'ReleaseDate' },
-    //   { label: 'Status', name: 'Status' },
-    //   { label: 'Total Episodes', name: 'TotalEpisodes' },
-    //   { label: 'episode length(mins)', name: 'episodeLength' },
-    // ]
-    const rows = ref([])
+    const search_query = ref(null);
+    const data = ref(null);
+    const resultArray = ref([]);
     const columns = [
       {
         name: 'releaseDate',
@@ -68,40 +58,62 @@ export default {
         field: 'episodeLength',
         label: 'Episode length(mins)',
       },
-      
-
-    ]
-    
-
-
+    ];
 
     async function submitInput(search_query) {
-      const response = await api.get(search_query)
-      data.value = response.data
+      const response = await api.get(search_query);
+      data.value = response.data;
       console.log(data.value)
-      result.value['title'] = data.value.data[0].attributes.titles.en
-      result.value['description'] = data.value.data[0].attributes.synopsis
-      result.value['img-url'] = data.value.data[0].attributes.coverImage.original
-      result.value['ep-count'] = data.value.data[0].attributes.episodeCount
-      result.value['ep-size'] = data.value.data[0].attributes.episodeLength
-      result.value['release'] = data.value.data[0].attributes.startDate
-      result.value['status'] = data.value.data[0].attributes.status
 
-      rows.value = [
-        {
-          releaseDate: result.value['release'], Status: result.value['status'], TotalEpisodes: result.value['ep-count'], episodeLength: result.value['ep-size']
-        },
-      ]
+      resultArray.value = [];
+      for (let i = 0; i < data.value.data.length; i++) {
+        const result = {};
+
+        if (data.value.data[i].attributes.titles.en) {
+          result['title'] = data.value.data[i].attributes.titles.en;
+        } else if (data.value.data[i].attributes.titles.en_us) {
+          result['title'] = data.value.data[i].attributes.titles.en_us;
+        } else {
+          result['title'] = data.value.data[i].attributes.canonicalTitle;
+        }
+
+        if (data.value.data[i].attributes.synopsis) {
+          result['description'] = data.value.data[i].attributes.synopsis;
+        } else if (data.value.data[i].attributes.description) {
+          result['description'] = data.value.data[i].attributes.description;
+        }
+        if(data.value.data[i].attributes.coverImage){
+          result['img-url'] = data.value.data[i].attributes.coverImage.original;
+        }
+        else{
+          result['img-url'] = data.value.data[i].attributes.posterImage.original;
+        }
+        
+        result['ep-count'] = data.value.data[i].attributes.episodeCount;
+        result['ep-size'] = data.value.data[i].attributes.episodeLength;
+        result['release'] = data.value.data[i].attributes.startDate;
+        result['status'] = data.value.data[i].attributes.status;
+
+        result['rows'] = [
+          {
+            releaseDate: result['release'],
+            Status: result['status'],
+            TotalEpisodes: result['ep-count'],
+            episodeLength: result['ep-size'],
+          },
+        ];
+
+        resultArray.value.push(result);
+      }
     }
-
 
     return {
-      search_query, submitInput, data, result, columns, rows
-    }
-  }
-
-
-}
-
-
+      search_query,
+      submitInput,
+      data,
+      resultArray,
+      columns,
+    };
+  },
+};
 </script>
